@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %} Annotate &bull;{% endblock %}
+{% set active_page = "corpus" %}
+{% block navigation %}{{super()}}{% endblock %}
+{% block content %}
+<div class="container-fluid p-3">
+    <div class="accordion" id="annotation-accordion">
+        {% for sent_id, sent_headword, sent_text in data.sentences %}
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="sentence-{{sent_id}}">
+                <button class="accordion-button {% if data.active_id != sent_id %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#sentence-body-{{sent_id}}" aria-expanded="{{data.active_id == sent_id}}" aria-controls="sentence-body-{{sent_id}}">
+                    <div class="row container">
+                        <div class="col-sm-2">
+                            {{sent_id}}
+                        </div>
+                        <div class="col-sm">
+                            {{sent_headword}}
+                        </div>
+                        <div class="col-sm-2">
+                            <span id="current-label-{{sent_id}}" class="badge bg-info {% if not data.annotations[sent_id] %}d-none{% endif %}">
+                                {{data.annotations[sent_id]}}
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="sentence-body-{{sent_id}}" class="accordion-collapse collapse {% if data.active_id == sent_id %}show{% endif %}" aria-labelledby="sentence-{{sent_id}}" data-bs-parent="#annotation-accordion">
+                <div class="accordion-body px-0">
+                    <div id="text" class="px-3">
+                        {{sent_text}}
+                    </div>
+                    <hr class="mx-0">
+                    <div id="comment" class="px-2 py-1">
+                        <input class="form-control" type="text" name="comment" placeholder="Comment (optional)">
+                    </div>
+                    <div id="options">
+                        {% for opt_id, opt_short, opt_label in data.options %}
+                        {% if loop.index % 4 == 1 %}
+                        {% if loop.index > 0 %}</div>{% endif %}
+                        {% if loop.revindex > 1 %}<div class="row px-3 py-1">{% endif %}
+                        {% endif %}
+                        <div id="option-{{opt_short}}" class="option-button btn col-sm my-1 mx-1 btn-{% if data.annotations[sent_id] == opt_label %}primary{% else %}secondary{% endif %}">
+                            <input type="hidden" name="sentence_id" value="{{sent_id}}">
+                            <input type="hidden" name="label_id" value="{{opt_id}}">
+                            <span class="lead">{{opt_label}}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<script>
+    $(".option-button").click(function() {
+        console.log(`Clicked ${this.id}`);
+        if ($(this).hasClass("btn-secondary")) {
+            $(this).siblings(".option-button").removeClass("btn-primary").addClass("btn-secondary");
+            $(this).removeClass("btn-secondary").addClass("btn-primary");
+        }
+        const label = $(this).children('span').text();
+        const sentence_id = $(this).children('input[name="sentence_id"]').val();
+        const label_id = $(this).children('input[name="label_id"]').val();
+        const comment = $(this).siblings('input[name="comment"]').val()
+        const $parent = $(this).parents('.accordion-collapse');
+        const $current_label = $(`#current-label-${sentence_id}`);
+
+        $.post("{{url_for('api')}}", {
+            action: "save_annotation",
+            sentence_id: sentence_id,
+            label_id: label_id,
+            comment: comment
+        },
+        function (response) {
+            if (response.success) {
+                $parent.collapse('toggle');
+                console.log($parent.parent());
+                $parent.parent().next().children('.accordion-collapse').collapse('toggle');
+                $current_label.removeClass("d-none").text(label);
+
+                $.notify({
+                    message: "Saved successfully!"
+                }, {
+                    type: "success"
+                });
+            } else {
+                $.notify({
+                    message: "Something went wrong!"
+                }, {
+                    type: "danger"
+                });
+            }
+        },
+        'json');
+    });
+</script>
+{% endblock %}

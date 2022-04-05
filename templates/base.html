@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% block head %}
+    <title>&bull; {{title}} &bull; {% block title %}{% endblock %}</title>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <link rel="stylesheet" id="theme_css" href="https://cdn.jsdelivr.net/npm/bootswatch@5.1.3/dist/united/bootstrap.min.css">
+    <link rel="stylesheet" href="{{url_for('static', filename='custom/css/sticky-footer.css')}}">
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+
+
+    <!-- Animations for Bootstrap-Notify -->
+    <link rel="stylesheet" href="{{url_for('static', filename='plugins/css/animate.min.css')}}">
+    <script src="{{url_for('static', filename='plugins/js/bootstrap-notify.min.js')}}"></script>
+
+    {% block app_head %}{% endblock %}
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css">
+    <style>
+        .animated {
+            -webkit-animation-iteration-count: infinite;
+            animation-iteration-count: infinite;
+        }
+    </style>
+    {% endblock %}
+</head>
+
+<body class="font-weight-light">
+    {% block navigation %}
+    {% set navigation_bar = {} -%}
+    {% set user_navigation = {
+        'corpus': ('show_corpus', 'Corpus'),
+    }-%}
+    {% if current_user.is_authenticated %}
+        {% set _dummy = navigation_bar.update(user_navigation) %}
+        {% set _dummy = navigation_bar.update({
+            'logout': ('logout', 'Logout (' + current_user.username + ')')
+        })-%}
+    {% else %}
+        {% set _dummy = navigation_bar.update({
+            'login': ('login', 'Login')
+        })-%}
+    {% endif %}
+    {% set active_page = active_page|default('login') -%}
+
+    <ul class="nav nav-tabs bg-light">
+        <li class="nav-item col-sm lead">
+            <span class="nav-link text-secondary disabled">{{title}}</span>
+        </li>
+        {% for id in navigation_bar %}
+        {% set func = navigation_bar[id][0] %}
+        {% set caption = navigation_bar[id][1] %}
+        <li class="nav-item lead">
+            <a class="nav-link {% if id == active_page %}active{% endif %}" href="{{url_for(func)}}">{{caption}}</a>
+        </li>
+        {% endfor %}
+
+    </ul>
+    {% endblock %}
+
+    {% include "messages.html" %}
+
+
+    {% block content %}{% endblock %}
+
+    <script type="text/javascript">
+        var csrf_token = "{{ csrf_token() }}";
+
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                }
+            }
+        });
+    </script>
+    <script>
+        $.notifyDefaults({
+            placement: {
+                from: "top",
+                align: "center"
+            },
+            allow_dismiss: false,
+            delay: 3000,
+            timer: 500,
+            animate: {
+                enter: 'animated fadeInDown',
+                exit: 'animated fadeOutUp'
+            }
+        });
+    </script>
+</body>
+<footer class="footer">
+    {% block footer %}
+    <div class="container-fluid">
+        <span class="text-secondary">
+            &copy; 2022-{{now.year}}, Hrishikesh Terdalkar. All Rights Reserved
+        </span>
+        <span class="float-right">
+        </span>
+    </div>
+    {% endblock %}
+</footer>
+</html>
