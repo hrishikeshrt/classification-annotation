@@ -36,14 +36,16 @@
                     <div id="options">
                         {% for opt_id, opt_short, opt_label in data.options %}
                         {% if loop.index % 4 == 1 %}
-                        {% if loop.index > 0 %}</div>{% endif %}
-                        {% if loop.revindex > 1 %}<div class="row px-3 py-1">{% endif %}
+                        <div class="row px-3 py-1">
                         {% endif %}
                         <div id="option-{{opt_short}}" class="option-button btn col-sm my-1 mx-1 btn-{% if data.annotations[sent_id] == opt_label %}primary{% else %}secondary{% endif %}">
                             <input type="hidden" name="sentence_id" value="{{sent_id}}">
                             <input type="hidden" name="label_id" value="{{opt_id}}">
                             <span class="lead">{{opt_label}}</span>
                         </div>
+                        {% if loop.index % 4 == 0 or loop.revindex == 1 %}
+                        </div>
+                        {% endif %}
                         {% endfor %}
                     </div>
                 </div>
