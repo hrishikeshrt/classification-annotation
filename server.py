@@ -337,7 +337,11 @@ def show_corpus():
         ).all()
     }
     if data["sentences"]:
-        data["active_id"] = data["sentences"][0][0]
+        data["active_id"] = [
+            sentence[0]
+            for sentence in data["sentences"]
+            if sentence[0] not in data["annotations"]
+        ][0]
 
     data["options"] = [
         (row.id, row.short, row.label) for row in Label.query.all()
