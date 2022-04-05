@@ -93,6 +93,17 @@ class BaseModelView(ModelView):
     create_modal = True
     edit_modal = True
 
+    def is_accessible(self):
+        authorized_users = ["admin", "hrishikesh", "jivnesh"]
+        return (
+            current_user.is_authenticated
+            and current_user.username in authorized_users
+        )
+
+    def inaccessible_callback(self, name, **kwargs):
+        flash("Unauthorized accesss.")
+        return redirect(url_for("show_corpus", next=request.url))
+
 
 class LabelModelView(BaseModelView):
     can_delete = False
