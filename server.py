@@ -147,7 +147,7 @@ admin.add_view(AnnotationModelView(Annotation, db.session))
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.where(User.id == user_id).first()
+    return User.query.get(user_id)
 
 
 @login_manager.unauthorized_handler
@@ -159,14 +159,13 @@ def unauthorized_handler():
 
 
 def user_exists(username):
-    return User.query.where(User.username == username).first() is not None
+    return User.query.filter_by(username=username).one_or_none() is not None
 
 
 def validate_user(username, password):
-    return User.query.where(
-        User.username == username,
-        User.hash == compute_user_hash(username, password),
-    ).first()
+    return User.query.filter_by(
+        username=username, hash=compute_user_hash(username, password)
+    ).one_or_none()
 
 
 def compute_user_hash(username, password):
@@ -240,9 +239,8 @@ def api():
         label_id = request.form.get("label_id")
         comment = request.form.get("comment")
         annotator_id = current_user.id
-        annotation = Annotation.query.where(
-            Annotation.sentence_id == sentence_id,
-            Annotation.annotator_id == annotator_id,
+        annotation = Annotation.query.filter_by(
+            sentence_id=sentence_id, annotator_id=annotator_id,
         ).one_or_none()
         if annotation is None:
             annotation = Annotation(
@@ -334,8 +332,8 @@ def show_corpus():
 
     data["annotations"] = {
         annotation.sentence_id: annotation.label.label
-        for annotation in Annotation.query.where(
-            Annotation.annotator_id == current_user.id
+        for annotation in Annotation.query.filter_by(
+            annotator_id=current_user.id
         ).all()
     }
     if data["sentences"]:
