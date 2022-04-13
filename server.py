@@ -34,17 +34,16 @@ from flask_login import (
 )
 from sqlalchemy.sql.expression import func
 
+import config
 from models import db, User, Label, Sentence, Annotation
 
 ###############################################################################
 # Import Sentences
 
-DATA_FILE = "data/data.csv"
-
 
 def import_data():
     """Import Sentence Data into SQLite3 Database from CSV"""
-    with open(DATA_FILE, encoding="utf-8") as f:
+    with open(config.DATA_FILE, encoding="utf-8") as f:
         rows = [
             line.split(",", 1) for line in f.read().split("\n") if line.strip()
         ]
@@ -63,13 +62,13 @@ webapp.config["DEBUG"] = True
 webapp.url_map.strict_slashes = False
 
 # generate a nice key using secrets.token_urlsafe()
-webapp.config["SECRET_KEY"] = "CwfYFi5lk6G9KqMwPWpBPZADGPut_Z2jCFQxG4M4Cdc"
+webapp.config["SECRET_KEY"] = config.SECRET_KEY
 webapp.config["JSON_AS_ASCII"] = False
 webapp.config["JSON_SORT_KEYS"] = False
 
 # SQLAlchemy Config
 webapp.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-webapp.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db/marathi.db"
+webapp.config["SQLALCHEMY_DATABASE_URI"] = config.DATABASE_URI
 webapp.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
 }
@@ -81,7 +80,7 @@ webapp.config["FLASK_ADMIN_SWATCH"] = "united"
 webapp.config["WTF_CSRF_TIME_LIMIT"] = None
 
 # Custom
-webapp.config["HASH_SALT"] = "samaasa"
+webapp.config["HASH_SALT"] = config.HASH_SALT
 
 ###############################################################################
 
@@ -94,7 +93,7 @@ class BaseModelView(ModelView):
     edit_modal = True
 
     def is_accessible(self):
-        authorized_users = ["admin", "hrishikesh", "jivnesh"]
+        authorized_users = config.ADMIN_USERS
         return (
             current_user.is_authenticated
             and current_user.username in authorized_users
@@ -181,10 +180,7 @@ def validate_user(username, password):
 
 def compute_user_hash(username, password):
     salt = webapp.config["HASH_SALT"]
-    print(salt)
     user_md5 = md5(f"{salt}.{username}.{password}".encode())
-    print(username)
-    print(user_md5.hexdigest())
     return user_md5.hexdigest()
 
 
@@ -213,12 +209,7 @@ def init_database():
 
     if not Label.query.count():
         db.session.add_all(
-            [
-                Label(short="T", label="तत्पुरुष"),
-                Label(short="D", label="द्वंद्व"),
-                Label(short="A", label="अव्ययीभाव"),
-                Label(short="B", label="बहुव्रीही"),
-            ]
+            [Label(short=k, label=v) for k, v in config.DEFAULT_LABELS.items()]
         )
         db.session.commit()
 
@@ -289,7 +280,6 @@ def login():
                 return redirect(url_for("show_corpus"))
             else:
                 flash("Login failed.", "danger")
-                print("HERE")
         else:
             flash("User does not exist.")
             return redirect(url_for("register"))
